@@ -27,13 +27,16 @@ except ImportError:
 
 
 class ExpiringDict(OrderedDict):
-    def __init__(self, max_len, max_age_seconds):
+    def __init__(self, max_len, max_age_seconds, default=None):
         assert max_age_seconds >= 0
         assert max_len >= 1
+        if default is not None:
+            assert isinstance(default, dict)
 
         OrderedDict.__init__(self)
         self.max_len = max_len
         self.max_age = max_age_seconds
+        self.default = default
         self.lock = RLock()
 
         if sys.version_info >= (3, 5):
@@ -52,7 +55,17 @@ class ExpiringDict(OrderedDict):
                     del self[key]
         except KeyError:
             pass
+
+        _has, _value, _age = self._try_get_from_default(key)
+        if _has:
+            return True
+
         return False
+
+    def _try_get_from_default(self, key):
+        if self.default and key in self.default:
+            return True, self.default[key], 999
+        return False, None, 0
 
     def __getitem__(self, key, with_age=False):
         """ Return the item of the dict.
@@ -68,6 +81,10 @@ class ExpiringDict(OrderedDict):
                 else:
                     return item[0]
             else:
+                _has, _value, _age = self._try_get_from_default(key)
+                if _has:
+                    return _value
+
                 del self[key]
                 raise KeyError(key)
 
@@ -92,6 +109,10 @@ class ExpiringDict(OrderedDict):
                 del self[key]
                 return item[0]
             except KeyError:
+                _has, _value, _age = self._try_get_from_default(key)
+                if _has:
+                    return _value
+
                 return default
 
     def ttl(self, key):
@@ -104,6 +125,11 @@ class ExpiringDict(OrderedDict):
             key_ttl = self.max_age - key_age
             if key_ttl > 0:
                 return key_ttl
+
+        _has, _value, _age = self._try_get_from_default(key)
+        if _has:
+            return _age
+
         return None
 
     def get(self, key, default=None, with_age=False):
