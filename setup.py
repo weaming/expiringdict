@@ -9,13 +9,13 @@ with open("README.rst") as f:
     long_description = f.read()
 
 
-setup(name='expiringdict',
-      version='1.1.4',
-      description="Dictionary with auto-expiring values for caching purposes",
+setup(name='expiringdict_with_default',
+      version='1.1.5',
+      description="Dictionary with auto-expiring values for caching purposes, support default value",
       long_description=long_description,
-      author='Anton Efimenko',
-      author_email='anton@mailgunhq.com',
-      url='https://github.com/mailgun/expiringdict',
+      author='weaming',
+      author_email='garden.yuen@gmail.com',
+      url='https://github.com/weaming/expiringdict',
       license='Apache 2',
       packages=find_packages(exclude=['tests']),
       include_package_data=True,
